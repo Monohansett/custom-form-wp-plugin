@@ -35,7 +35,7 @@ function custom_form_builder() {
 }
 
 function logging_valid_mail() {
-	$fd = fopen("D:\OSPanel\domains\amisoft\wp-content\plugins\custom-form\correct_mail.log", 'a+') or die('Can\'t open file');
+	$fd = fopen("\correct_mail.log", 'a+') or die('Can\'t open file');
 	$e = $_POST["cf-email"];
 	$valid_mail = 'This email is valid: ' . $e . "\r\n";
     fwrite($fd, $valid_mail);
@@ -76,28 +76,31 @@ function send_post_data() {
 	curl_setopt_array($ch, $curl_options);
 
 	$response = @curl_exec($ch);
+
+	if ($response === false) {
+		echo 'Please fill the form correctly and try again!';
+	} else {
+		$to = "frostyvi92@gmail.com";
+		$headers = "From: $name <$email>" . "\r\n";
+
+		wp_mail($to, $subject, $message, $headers);
+
+		logging_valid_mail();
+
+		echo '
+		<div>
+		<p>Thanks for contacting me, expect a response soon.</p>
+		</div>
+		';
+	}
 	@curl_close($ch);
 }
 
 function to_send_email() {
 
 	if ( isset( $_POST['cf-submitted'] ) ) {
-
 		send_post_data();
-
-		if ($response === false) {
-			echo 'Please fill the form correctly and try again!';
-
-		} else {
-			logging_valid_mail();
-			// header('Location:'.$_SERVER['PHP_SELF']);
-			echo '
-				<div>
-					<p>Your email was sent successfully!</p>
-				</div>
-			';
-		}
-	}
+	} 
 }
 
 function cf_shortcode() {
@@ -116,4 +119,4 @@ function clear_form_init() {
 
 add_shortcode( 'contact_form', 'cf_shortcode' );
 
-?>
+?>s
