@@ -5,6 +5,7 @@ Description: Simple WordPress Contact Form
 Version: 1.0
 */
 
+define('CUSTOM_FORM_DIR', plugin_dir_path(__FILE__));
 
 function custom_form_builder() {
     echo '
@@ -35,7 +36,7 @@ function custom_form_builder() {
 }
 
 function logging_valid_mail() {
-	$fd = fopen("D:\OSPanel\domains\amisoft\wp-content\plugins\custom-form\correct_mail.log", 'a+') or die('Can\'t open file');
+	$fd = fopen(CUSTOM_FORM_DIR . 'valid_mail.log', 'a+') or die('Can\'t open file');
 	$e = $_POST["cf-email"];
 	$valid_mail = 'This email is valid: ' . $e . "\r\n";
     fwrite($fd, $valid_mail);
@@ -76,28 +77,38 @@ function send_post_data() {
 	curl_setopt_array($ch, $curl_options);
 
 	$response = @curl_exec($ch);
+
+	if ($response) {
+		
+		$name    = sanitize_text_field( $_POST["cf-first_name"] );
+        $email   = sanitize_email( $_POST["cf-email"] );
+        $subject = sanitize_text_field( $_POST["cf-subject"] );
+		$message = esc_textarea( $_POST["cf-message"] );
+		
+		$to = get_option( 'admin_email' );
+		$headers = "From: $name <$email>" . "\r\n";
+
+		wp_mail($to, $subject, $message, $headers);
+
+		logging_valid_mail();
+		
+		echo '
+		<div>
+		<p>Thanks for contacting me, expect a response soon.</p>
+		</div>
+		';
+	} else {
+		echo 'Please fill the form correctly and try again!';
+	}
+
 	@curl_close($ch);
 }
 
+
 function to_send_email() {
-
 	if ( isset( $_POST['cf-submitted'] ) ) {
-
 		send_post_data();
-
-		if ($response === false) {
-			echo 'Please fill the form correctly and try again!';
-
-		} else {
-			logging_valid_mail();
-			// header('Location:'.$_SERVER['PHP_SELF']);
-			echo '
-				<div>
-					<p>Your email was sent successfully!</p>
-				</div>
-			';
-		}
-	}
+	} 
 }
 
 function cf_shortcode() {
